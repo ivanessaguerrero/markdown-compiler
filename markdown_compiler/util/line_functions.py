@@ -2,6 +2,22 @@
 Each of the functions in this file takes a single line of input and transforms the line in some way.
 '''
 
+
+def _compile_delim(line, delim, tag):
+    result = ''
+    while True:
+        start = line.find(delim)
+        if start == -1:
+            break
+        end = line.find(delim, start + len(delim))
+        if end == -1:
+            break
+        inside = line[start + len(delim):end]
+        result += line[:start] + '<' + tag + '>' + inside + '</' + tag + '>'
+        line = line[end + len(delim):]
+    return result + line
+
+
 def compile_headers(line):
     '''
     Convert markdown headers into <h1>,<h2>,etc tags.
@@ -26,20 +42,10 @@ def compile_headers(line):
     >>> compile_headers('      # this is not a header')
     '      # this is not a header'
     '''
-    if line.startswith('###### '):
-        return '<h6>' + line[7:] + '</h6>'
-    elif line.startswith('##### '):
-        return '<h5>' + line[6:] + '</h5>'
-    elif line.startswith('#### '):
-        return '<h4>' + line[5:] + '</h4>'
-    elif line.startswith('### '):
-        return '<h3>' + line[4:] + '</h3>'
-    elif line.startswith('## '):
-        return '<h2>' + line[3:] + '</h2>'
-    elif line.startswith('# '):
-        return '<h1>' + line[2:] + '</h1>'
-    else:
-        return line
+    for n in range(6, 0, -1):
+        if line[:n + 1] == '#' * n + ' ':
+            return '<h' + str(n) + '>' + line[n:] + '</h' + str(n) + '>'
+    return line
 
 
 def compile_italic_star(line):
@@ -63,7 +69,7 @@ def compile_italic_star(line):
     >>> compile_italic_star('*')
     '*'
     '''
-    return line
+    return _compile_delim(line, '*', 'i')
 
 
 def compile_italic_underscore(line):
@@ -84,7 +90,7 @@ def compile_italic_underscore(line):
     >>> compile_italic_underscore('_')
     '_'
     '''
-    return line
+    return _compile_delim(line, '_', 'i')
 
 
 def compile_strikethrough(line):
@@ -107,7 +113,7 @@ def compile_strikethrough(line):
     >>> compile_strikethrough('~~')
     '~~'
     '''
-    return line
+    return _compile_delim(line, '~~', 'ins')
 
 
 def compile_bold_stars(line):
@@ -128,7 +134,7 @@ def compile_bold_stars(line):
     >>> compile_bold_stars('**')
     '**'
     '''
-    return line
+    return _compile_delim(line, '**', 'b')
 
 
 def compile_bold_underscore(line):
@@ -149,7 +155,7 @@ def compile_bold_underscore(line):
     >>> compile_bold_underscore('__')
     '__'
     '''
-    return line
+    return _compile_delim(line, '__', 'b')
 
 
 def compile_code_inline(line):
@@ -179,7 +185,16 @@ def compile_code_inline(line):
     >>> compile_code_inline('```python3')
     '```python3'
     '''
-    return line
+    if line.find('```') != -1:
+        return line
+    start = line.find('`')
+    if start == -1:
+        return line
+    end = line.find('`', start + 1)
+    if end == -1:
+        return line
+    code = line[start + 1:end].replace('<', '&lt;').replace('>', '&gt;')
+    return line[:start] + '<code>' + code + '</code>' + line[end + 1:]
 
 
 def compile_links(line):
@@ -199,7 +214,18 @@ def compile_links(line):
     >>> compile_links('this is wrong: [course webpage](https://github.com/mikeizbicki/cmc-csci040')
     'this is wrong: [course webpage](https://github.com/mikeizbicki/cmc-csci040'
     '''
-    return line
+    start = line.find('[')
+    if start == -1:
+        return line
+    middle = line.find('](', start)
+    if middle == -1:
+        return line
+    end = line.find(')', middle)
+    if end == -1:
+        return line
+    text = line[start + 1:middle]
+    url = line[middle + 2:end]
+    return line[:start] + '<a href="' + url + '">' + text + '</a>' + line[end + 1:]
 
 
 def compile_images(line):
@@ -218,4 +244,16 @@ def compile_images(line):
     >>> compile_images('This is an image of Mike Izbicki: ![Mike Izbicki](https://avatars1.githubusercontent.com/u/1052630?v=2&s=460)')
     'This is an image of Mike Izbicki: <img src="https://avatars1.githubusercontent.com/u/1052630?v=2&s=460" alt="Mike Izbicki" />'
     '''
-    return line
+
+    start = line.find('![')
+    if start == -1:
+        return line
+    middle = line.find('](', start)
+    if middle == -1:
+        return line
+    end = line.find(')', middle)
+    if end == -1:
+        return line
+    alt = line[start + 2:middle]
+    src = line[middle + 2:end]
+    return line[:start] + '<img src="' + src + '" alt="' + alt + '" />' + line[end + 1:]
