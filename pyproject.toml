@@ -13,3 +13,4 @@ include = ["markdown_compiler*"]
 
 [project.scripts]
 markdown-compiler = "markdown_compiler.__main__:main"
+

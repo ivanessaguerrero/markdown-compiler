@@ -26,7 +26,20 @@ def compile_headers(line):
     >>> compile_headers('      # this is not a header')
     '      # this is not a header'
     '''
-    return line
+    if line.startswith('###### '):
+        return '<h6>' + line[7:] + '</h6>'
+    elif line.startswith('##### '):
+        return '<h5>' + line[6:] + '</h5>'
+    elif line.startswith('#### '):
+        return '<h4>' + line[5:] + '</h4>'
+    elif line.startswith('### '):
+        return '<h3>' + line[4:] + '</h3>'
+    elif line.startswith('## '):
+        return '<h2>' + line[3:] + '</h2>'
+    elif line.startswith('# '):
+        return '<h1>' + line[2:] + '</h1>'
+    else:
+        return line
 
 
 def compile_italic_star(line):
